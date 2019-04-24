@@ -1,8 +1,15 @@
 FROM debian:stretch
 MAINTAINER Martin Raiber <martin@urbackup.org>
+ENV APT_KEY_DONT_WARN_ON_DANGEROUS_USAGE=DontWarn
 
-RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y gnupg &&\
-    echo '-----BEGIN PGP PUBLIC KEY BLOCK-----\n\
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y apt-utils gnupg wget &&\
+echo 'deb http://download.opensuse.org/repositories/home:/uroni/Debian_9.0/ /' > /etc/apt/sources.list.d/urbackup-server.list &&\
+wget http://download.opensuse.org/repositories/home:uroni/Debian_9.0/Release.key &&\
+apt-key add - < Release.key
+
+RUN DEBIAN_FRONTEND=noninteractive apt-get upgrade -y 
+
+RUN echo '-----BEGIN PGP PUBLIC KEY BLOCK-----\n\
 Version: GnuPG v1.4.5 (GNU/Linux)\n\
 \n\
 mQGiBE0l/ngRBACDijN2ucVRAzQY2UW4F8dll6hfXSdGq5zCyQ9CU7H6BLEwi15I\n\
@@ -22,11 +29,8 @@ ClXc9mDhBwCgmHEzkcQYjJgDx1DfqauiVS89Ce0=\n\
 =6f/s\n\
 -----END PGP PUBLIC KEY BLOCK-----' | apt-key add -
 
-RUN echo 'deb http://download.opensuse.org/repositories/home:/uroni/Debian_9.0/ /' > /etc/apt/sources.list.d/urbackup-server.list &&\
-    apt-get update &&\
-    echo "urbackup-server urbackup/backuppath string /backups" | debconf-set-selections &&\
-    export DEBIAN_FRONTEND=noninteractive &&\
-    apt-get install -y --no-install-recommends --allow-unauthenticated urbackup-server btrfs-tools &&\
+RUN DEBIAN_FRONTEND=noninteractive apt-get update && echo "urbackup-server urbackup/backuppath string /backups" | debconf-set-selections
+RUN DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --allow-unauthenticated urbackup-server btrfs-tools &&\
     rm -rf /var/lib/apt/lists/*
 
 COPY start /usr/bin/start
